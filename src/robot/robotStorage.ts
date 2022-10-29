@@ -6,6 +6,7 @@ export default class RobotStorage {
 
   constructor(tablePrefix: string = "brobbot_") {
     this.pg = postgres(process.env.DATABASE_URL || '', {
+      debug: console.log,
       ssl: {
         rejectUnauthorized: false
       }
