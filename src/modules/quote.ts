@@ -73,7 +73,7 @@ function regexMatches(text: string, message: Message) {
   }
 }
 
-const quote = (robot: Robot) => {
+const quote = async (robot: Robot) => {
   robot.helpCommand('remember `user` `text`', 'remember most recent message from `user` containing `text`');
   robot.helpCommand('forget `user` `text`', 'forget most recent remembered message from `user` containing `text`');
   robot.helpCommand('quote [`user`] [`text`]', 'quote a random remembered message that is from `user` and/or contains `text`');
@@ -85,30 +85,28 @@ const quote = (robot: Robot) => {
   const tableName = robot.storage.tableName('quotes');
   const sql = robot.storage.pg;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS
+      ${sql(tableName)}
+    (
+      id bigint UNSIGNED PRIMARY KEY AUTO INCREMENT,
+      text_raw text,
+      text_searchable tsvector GENERATED ALWAYS AS (to_tsvector('english', coalesce(text_raw, '')) STORED,
+      user_id varchar(50),
+      created_at datetime,
+      last_quoted_at datetime,
+      stored boolean
+    )
+  `;
+
+  await sql`CREATE INDEX IF NOT EXISTS text_searchable_idx ON ${sql(tableName)} USING GIN (text_searchable)`;
+  await sql`CREATE INDEX IF NOT EXISTS created_at_idx ON ${sql(tableName)} (created_at)`;
+  await sql`CREATE INDEX IF NOT EXISTS last_quoted_at_idx ON ${sql(tableName)} (last_quoted_at)`;
+  await sql`CREATE INDEX IF NOT EXISTS stored_idx ON ${sql(tableName)} (stored)`;
+
   const messageTmpl = async (message: Message) => {
     const user = await robot.userForId(message.user);
     return `${user.first_name}: ${message.text}`;
-  };
-
-  const createTable = async () => {
-    await sql`
-      CREATE TABLE IF NOT EXISTS
-        ${sql(tableName)}
-      (
-        id bigint UNSIGNED PRIMARY KEY AUTO INCREMENT,
-        text_raw text,
-        text_searchable tsvector GENERATED ALWAYS AS (to_tsvector('english', coalesce(text_raw, '')) STORED,
-        user_id varchar(50),
-        created_at datetime,
-        last_quoted_at datetime,
-        stored boolean
-      )
-    `;
-
-    await sql`CREATE INDEX IF NOT EXISTS text_searchable_idx ON ${sql(tableName)} USING GIN (text_searchable)`;
-    await sql`CREATE INDEX IF NOT EXISTS created_at_idx ON ${sql(tableName)} (created_at)`;
-    await sql`CREATE INDEX IF NOT EXISTS last_quoted_at_idx ON ${sql(tableName)} (last_quoted_at)`;
-    await sql`CREATE INDEX IF NOT EXISTS stored_idx ON ${sql(tableName)} (stored)`;
   };
 
   const cacheMessage = async (message: Message) => {

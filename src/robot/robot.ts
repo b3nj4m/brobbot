@@ -1,5 +1,7 @@
 import { AllMiddlewareArgs, App, LogLevel, SlackEventMiddlewareArgs } from "@slack/bolt";
 import { StringIndexed } from "@slack/bolt/dist/types/helpers";
+import quote from "../modules/quote";
+import weather from "../modules/weather";
 import RobotStorage from "./robotStorage";
 
 export interface User {
@@ -40,6 +42,7 @@ export default class Robot {
       appToken: process.env.SLACK_APP_TOKEN,
       socketMode: true,
       logLevel: LogLevel.DEBUG,
+      port: parseInt(process.env.PORT || '') || 3000,
     });
 
     this.helps = [];
@@ -54,9 +57,12 @@ export default class Robot {
 
   public async start () {
     await Promise.all([
-      this.app.start(Number(process.env.PORT) || 3000),
+      this.app.start(),
       this.allUsers(),
       this.storage.checkVersion(),
+      this.storage.initTables(),
+      weather(this),
+      quote(this),
     ]);
     this.handleMessages();
   }

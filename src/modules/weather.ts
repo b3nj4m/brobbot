@@ -76,7 +76,7 @@ function emojiName(iconName: string) {
 
 
 //TODO params of app, robot(storage, helpCommand, etc.)
-const weather = (robot: Robot) => {
+const weather = async (robot: Robot) => {
   robot.helpCommand("weather `query`", "Get the weather forecast for `query`");
 
   robot.robotMessage(/^(weather|forecast) (.+)/i, async ({say, match}) => {
