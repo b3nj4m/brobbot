@@ -32,7 +32,7 @@ export default class RobotStorage {
         name varchar(255),
         raw_data jsonb,
         UNIQUE (id),
-        KEY (name))`;
+        KEY name)`;
   }
 
 }
