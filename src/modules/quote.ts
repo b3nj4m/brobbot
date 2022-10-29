@@ -91,7 +91,7 @@ const quote = async (robot: Robot) => {
     (
       id BIGSERIAL PRIMARY KEY,
       text_raw text,
-      text_searchable tsvector GENERATED ALWAYS AS (to_tsvector('english', coalesce(text_raw, '')) STORED,
+      text_searchable tsvector GENERATED ALWAYS AS (to_tsvector('english', coalesce(text_raw, ''))) STORED,
       user_id varchar(50),
       created_at datetime,
       last_quoted_at datetime,
