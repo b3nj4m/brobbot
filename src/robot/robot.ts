@@ -98,6 +98,8 @@ export default class Robot {
     this.app.message(/.*/, async (e) => {
       const {message} = e;
       if (message.subtype === undefined) {
+        console.log(`saw message: ${message.text}`);
+
         if (message.text?.match(new RegExp(`^${this.botName}\b`))) {
           this.robotListeners.find(([pattern, listener]) => {
             const match = message.text?.replace(new RegExp(`^${this.botName}\s+`), '').match(pattern);
