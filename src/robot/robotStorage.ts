@@ -27,7 +27,7 @@ export default class RobotStorage {
 
   public async initTables () {
     return await this.pg`
-      CREATE TABLE IF NOT EXISTS ${this.tableName('users')}
+      CREATE TABLE IF NOT EXISTS ${this.pg(this.tableName('users'))}
         (id varchar(255) NOT NULL,
         name varchar(255),
         raw_data jsonb,
