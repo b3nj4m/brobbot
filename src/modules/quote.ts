@@ -89,7 +89,7 @@ const quote = async (robot: Robot) => {
     CREATE TABLE IF NOT EXISTS
       ${sql(tableName)}
     (
-      id bigint UNSIGNED PRIMARY KEY AUTO INCREMENT,
+      id BIGSERIAL PRIMARY KEY,
       text_raw text,
       text_searchable tsvector GENERATED ALWAYS AS (to_tsvector('english', coalesce(text_raw, '')) STORED,
       user_id varchar(50),
