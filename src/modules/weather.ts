@@ -9,7 +9,7 @@ import Robot from '../robot/robot';
 const BROBBOT_WEATHER_MAPBOX_KEY = process.env.BROBBOT_WEATHER_MAPBOX_KEY || '';
 const BROBBOT_WEATHER_DARKSKY_KEY = process.env.BROBBOT_WEATHER_DARKSKY_KEY || '';
 
-function get(url) {
+function get(url: string) {
   return new Promise((resolve, reject) => {
     https.get(url, (res) => {
       const d: string[] = [];
@@ -31,7 +31,7 @@ function get(url) {
   });
 }
 
-function geoCode(query) {
+function geoCode(query: string) {
   return Promise.resolve().then(() => {
     return get(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${encodeURIComponent(BROBBOT_WEATHER_MAPBOX_KEY)}&limit=1`)
       .then((data: any) => {
@@ -41,7 +41,7 @@ function geoCode(query) {
   });
 }
 
-function forecast(place) {
+function forecast(place: any) {
   return Promise.resolve().then(() => {
     return get(`https://api.darksky.net/forecast/${encodeURIComponent(BROBBOT_WEATHER_DARKSKY_KEY)}/${encodeURIComponent(place.center.join(','))}`)
       .then((forecast) => {
@@ -50,12 +50,12 @@ function forecast(place) {
   });
 }
 
-function forecastString(data) {
+function forecastString(data: any) {
   const {currently, daily} = data.forecast;
   return `currently ${currently.summary} ${emojiName(currently.icon)} ${currently.temperature}°F; expected high ${daily.data[0].temperatureHigh}°F; ${daily.summary} ${emojiName(daily.icon)}`;
 }
 
-const emojiIcons = {
+const emojiIcons: Record<string, string> = {
   'clear-day': 'sun_with_face',
   'clear-night': 'full_moon_with_face',
   'rain': 'rain_cloud',
@@ -70,30 +70,24 @@ const emojiIcons = {
   'thunderstorm': 'lightning_cloud_and_rain',
   'hail': 'snow_cloud'
 };
-function emojiName(iconName) {
+function emojiName(iconName: string) {
   return emojiIcons[iconName] ? `:${emojiIcons[iconName]}:` : '';
 }
 
 
 //TODO params of app, robot(storage, helpCommand, etc.)
 const weather = (robot: Robot) => {
-  robot.helpCommand("brobbot weather `query`", "Get the weather forecast for `query`");
+  robot.helpCommand("weather `query`", "Get the weather forecast for `query`");
 
-  robot.app.message(/^(weather|forecast) (.+)/i, async ({message, say, body}) => {
-    if (message.subtype === undefined) {
-      const match = message.text?.match(/^(weather|forecast) (.+)/i);
-      if (!match) {
-        return;
-      }
-      try {
-        const geo = await geoCode(match[2]);
-        const fc = await forecast(geo);
-        await say(`Weather for ${fc.place.text}: ${forecastString(fc)}`);
-      }
-      catch (err) {
-        console.error(`brobbot-weather error: ${err}`);
-        await say(`No results for ${match[2]} :(`);
-      }
+  robot.robotMessage(/^(weather|forecast) (.+)/i, async ({say, match}) => {
+    try {
+      const geo = await geoCode(match[2]);
+      const fc = await forecast(geo);
+      await say(`Weather for ${fc.place.text}: ${forecastString(fc)}`);
+    }
+    catch (err) {
+      console.error(`brobbot-weather error: ${err}`);
+      await say(`No results for ${match[2]} :(`);
     }
   });
 };
