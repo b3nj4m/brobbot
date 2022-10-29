@@ -101,7 +101,7 @@ export default class Robot {
   }
 
   private handleMessages () {
-    this.app.message(/.*/, async (e) => {
+    this.app.message('', async (e) => {
       const {message} = e;
       console.log(`saw message: ${message}`);
 
