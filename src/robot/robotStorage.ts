@@ -5,7 +5,11 @@ export default class RobotStorage {
   public tablePrefix: string;
 
   constructor(tablePrefix: string = "brobbot_") {
-    this.pg = postgres(process.env.DATABASE_URL || '');
+    this.pg = postgres(process.env.DATABASE_URL || '', {
+      ssl: {
+        rejectUnauthorized: false
+      }
+    });
     this.tablePrefix = tablePrefix;
   }
 
