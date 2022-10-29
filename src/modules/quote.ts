@@ -95,14 +95,14 @@ const quote = async (robot: Robot) => {
       user_id varchar(50),
       created_at datetime,
       last_quoted_at datetime,
-      stored boolean
+      is_stored boolean
     )
   `;
 
   await sql`CREATE INDEX IF NOT EXISTS text_searchable_idx ON ${sql(tableName)} USING GIN (text_searchable)`;
   await sql`CREATE INDEX IF NOT EXISTS created_at_idx ON ${sql(tableName)} (created_at)`;
   await sql`CREATE INDEX IF NOT EXISTS last_quoted_at_idx ON ${sql(tableName)} (last_quoted_at)`;
-  await sql`CREATE INDEX IF NOT EXISTS stored_idx ON ${sql(tableName)} (stored)`;
+  await sql`CREATE INDEX IF NOT EXISTS is_stored_idx ON ${sql(tableName)} (is_stored)`;
 
   const messageTmpl = async (message: Message) => {
     const user = await robot.userForId(message.user);
@@ -117,10 +117,10 @@ const quote = async (robot: Robot) => {
         FROM
           ${sql(tableName)}
         WHERE
-          stored = 0
+          is_stored = 0
           AND user_id = ${message.user}
         GROUP BY
-          stored
+          is_stored
       `;
       if (size[0].size >= STORE_SIZE) {
         const oldest = await sql`
@@ -129,7 +129,7 @@ const quote = async (robot: Robot) => {
           FROM
             ${sql(tableName)}
           WHERE
-            stored = 0
+            is_stored = 0
             AND user_id = ${message.user}
           ORDER BY
             created_at ASC
@@ -150,14 +150,14 @@ const quote = async (robot: Robot) => {
         ${sql({
           text: message.text,
           user_id: message.user,
-          stored: 0,
+          is_stored: 0,
           created_at: new Date().toISOString()
         })}
       `;
     });
   };
 
-  const storeMessage = async (username: string, text: string, stored: boolean) => {
+  const storeMessage = async (username: string, text: string, is_stored: boolean) => {
     //TODO need fancier user matching?
     const user = robot.userForName(username);
 
@@ -175,7 +175,7 @@ const quote = async (robot: Robot) => {
         WHERE
           text_searchable @@ to_tsquery(${text})
           AND user_id = ${user.id}
-          AND stored = ${!stored}
+          AND is_stored = ${!is_stored}
         ORDER BY
           created_at DESC
         LIMIT 1
@@ -191,7 +191,7 @@ const quote = async (robot: Robot) => {
         UPDATE
           ${sql(tableName)}
         SET
-          stored = ${stored}
+          is_stored = ${is_stored}
         WHERE
           id = ${message.id}
       `;
@@ -209,7 +209,7 @@ const quote = async (robot: Robot) => {
       FROM
         ${sql(tableName)}
       WHERE
-        stored = 1
+        is_stored = 1
         ${text ? sql`AND text_searchable @@ to_tsvector(${user ? text : `${username} ${text}`}` : ''})
         ${user ? sql`AND user_id = ${user.id}` : ''}
       LIMIT ${limit}
