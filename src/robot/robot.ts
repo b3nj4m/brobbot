@@ -9,6 +9,7 @@ export interface User {
   first_name: string;
   last_name: string;
   display_name: string;
+  real_name: string;
   status_text: string;
   status_emoji: string;
   image_72: string;
@@ -81,11 +82,11 @@ export default class Robot {
   }
 
   public userForName (name: string) {
-    return Object.values(this.users).find(user => user.first_name.toLowerCase() === name.toLowerCase());
+    return Object.values(this.users).find(user => `${user.first_name} ${user.last_name} ${user.real_name}`.toLowerCase().includes(name.toLowerCase()));
   }
 
   public async allUsers () {
-    const users = (await this.app.client.users.list()).members?.map((user) => user.profile) as User[];
+    const users = (await this.app.client.users.list()).members?.map((user) => ({id: user.id, ...user.profile})) as User[];
     users.forEach((user) => {
       this.users[user.id] = user;
     });
@@ -103,12 +104,13 @@ export default class Robot {
   private handleMessages () {
     this.app.message('', async (e) => {
       const {message} = e;
-      console.log(`saw message: ${message}`);
 
       if (message.subtype === undefined) {
-        if (message.text?.match(new RegExp(`^${this.botName}\b`))) {
+        console.log(`saw message: ${message.text}`);
+
+        if (message.text?.match(new RegExp(`^${this.botName}\\b`, 'i'))) {
           this.robotListeners.find(([pattern, listener]) => {
-            const match = message.text?.replace(new RegExp(`^${this.botName}\s+`), '').match(pattern);
+            const match = message.text?.replace(new RegExp(`^${this.botName}\\s+`, 'i'), '').match(pattern);
             if (!match) {
               return false;
             }

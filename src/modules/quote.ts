@@ -3,14 +3,11 @@
 //
 // Configuration:
 //   BROBBOT_QUOTE_CACHE_SIZE=N - Cache the last N messages for each user for potential remembrance (default 25).
-//   BROBBOT_QUOTE_STORE_SIZE=N - Remember at most N messages for each user (default 100).
-//   BROBBOT_QUOTE_INIT_TIMEOUT=N - wait for N milliseconds for brain data to load from redis. (default 10000).
-//   BROBBOT_QUOTE_SUBSTRING_MATCHING=true|false - whether to include substring matches when searching for quotes (default true).
 
 import Robot, { Message, User } from "../robot/robot";
 import {random} from 'lodash';
 
-var STORE_SIZE = process.env.BROBBOT_QUOTE_STORE_SIZE ? parseInt(process.env.BROBBOT_QUOTE_STORE_SIZE) : 500;
+var CACHE_SIZE = process.env.BROBBOT_QUOTE_CACHE_SIZE ? parseInt(process.env.BROBBOT_QUOTE_CACHE_SIZE) : 25;
 
 const userNotFoundTmpls = [
   (username: string) => `I don't know any ${username}`,
@@ -73,6 +70,23 @@ function regexMatches(text: string, message: Message) {
   }
 }
 
+interface MessageRow {
+  id: number;
+  text_raw: string;
+  user_id: string;
+  is_stored: boolean;
+  created_at: string;
+  last_quoted_at: string;
+}
+
+function rowToMessage (row: MessageRow) {
+  return {
+    id: row.id,
+    text: row.text_raw,
+    user: row.user_id,
+  } as Message;
+}
+
 const quote = async (robot: Robot) => {
   robot.helpCommand('remember `user` `text`', 'remember most recent message from `user` containing `text`');
   robot.helpCommand('forget `user` `text`', 'forget most recent remembered message from `user` containing `text`');
@@ -106,7 +120,7 @@ const quote = async (robot: Robot) => {
 
   const messageTmpl = async (message: Message) => {
     const user = await robot.userForId(message.user);
-    return `${user.first_name}: ${message.text}`;
+    return `${user.first_name || user.real_name}: ${message.text}`;
   };
 
   const cacheMessage = async (message: Message) => {
@@ -117,19 +131,19 @@ const quote = async (robot: Robot) => {
         FROM
           ${sql(tableName)}
         WHERE
-          is_stored = 0
+          is_stored = false
           AND user_id = ${message.user}
         GROUP BY
           is_stored
       `;
-      if (size[0].size >= STORE_SIZE) {
+      if (size.length > 0 && size[0].size >= CACHE_SIZE) {
         const oldest = await sql`
           SELECT
             id
           FROM
             ${sql(tableName)}
           WHERE
-            is_stored = 0
+            is_stored = false
             AND user_id = ${message.user}
           ORDER BY
             created_at ASC
@@ -148,9 +162,9 @@ const quote = async (robot: Robot) => {
         INSERT INTO
           ${sql(tableName)}
         ${sql({
-          text: message.text,
+          text_raw: message.text,
           user_id: message.user,
-          is_stored: 0,
+          is_stored: false,
           created_at: new Date().toISOString()
         })}
       `;
@@ -181,7 +195,7 @@ const quote = async (robot: Robot) => {
         LIMIT 1
       `;
 
-      const message = result[0];
+      const message = result[0] as MessageRow;
       if (!message) {
         console.warn(`couldn't find message matching ${text}`);
         return null;
@@ -196,24 +210,26 @@ const quote = async (robot: Robot) => {
           id = ${message.id}
       `;
 
-      return message as Message;
+      return rowToMessage(message);
     });
   };
 
   const searchStoredMessages = async (username: string, text: string, limit: number = 20) => {
     const user = robot.userForName(username);
 
-    return (await sql`
+    const results = (await sql`
       SELECT
         *
       FROM
         ${sql(tableName)}
       WHERE
-        is_stored = 1
-        ${text ? sql`AND text_searchable @@ to_tsvector(${user ? text : `${username} ${text}`}` : ''})
-        ${user ? sql`AND user_id = ${user.id}` : ''}
+        is_stored = true
+        ${(text || username) ? sql`AND text_searchable @@ to_tsquery(${user ? text : `${username} ${text}`})` : sql``}
+        ${user ? sql`AND user_id = ${user.id}` : sql``}
       LIMIT ${limit}
-    `) as Message[];
+    `) as MessageRow[];
+
+    return results.map(row => rowToMessage(row));
   }
 
   const updateLastQuotedAt = async (messages: Message | Message[]) => {
