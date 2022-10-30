@@ -88,7 +88,9 @@ export default class Robot {
   public async allUsers () {
     const users = (await this.app.client.users.list()).members?.map((user) => ({id: user.id, ...user.profile})) as User[];
     users.forEach((user) => {
-      this.users[user.id] = user;
+      if (user.id) {
+        this.users[user.id] = user;
+      }
     });
     return users;
   }
