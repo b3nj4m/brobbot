@@ -87,6 +87,10 @@ function rowToMessage (row: MessageRow) {
   } as Message;
 }
 
+function stringToTsQuery (text: string) {
+  return text.trim().split(/\s+/g).join(' & ');
+}
+
 const quote = async (robot: Robot) => {
   robot.helpCommand('remember `user` `text`', 'remember most recent message from `user` containing `text`');
   robot.helpCommand('forget `user` `text`', 'forget most recent remembered message from `user` containing `text`');
@@ -187,11 +191,11 @@ const quote = async (robot: Robot) => {
         FROM
           ${sql(tableName)}
         WHERE
-          text_searchable @@ to_tsquery(${text})
+          text_searchable @@ to_tsquery(${stringToTsQuery(text)})
           AND user_id = ${user.id}
           AND is_stored = ${!is_stored}
         ORDER BY
-          created_at DESC
+          ${is_stored ? sql`created_at DESC` : sql`last_quoted_at DESC, created_at DESC`}
         LIMIT 1
       `;
 
@@ -224,8 +228,10 @@ const quote = async (robot: Robot) => {
         ${sql(tableName)}
       WHERE
         is_stored = true
-        ${(text || username) ? sql`AND text_searchable @@ to_tsquery(${user ? text : `${username} ${text}`})` : sql``}
+        ${(text || (username && !user)) ? sql`AND text_searchable @@ to_tsquery(${stringToTsQuery(user ? text : `${username} ${text}`)})` : sql``}
         ${user ? sql`AND user_id = ${user.id}` : sql``}
+      ORDER BY
+        random()
       LIMIT ${limit}
     `) as MessageRow[];
 
@@ -276,9 +282,9 @@ const quote = async (robot: Robot) => {
     const username = match[2] || '';
     const text = match[4] || '';
 
-    const messages = await searchStoredMessages(username, text);
+    const messages = await searchStoredMessages(username, text, 1);
     if (messages && messages.length > 0) {
-      const message = randomItem(messages);
+      const message = messages[0];
       const messageString = await messageTmpl(message);
       say(messageString);
       updateLastQuotedAt(message);
@@ -293,10 +299,11 @@ const quote = async (robot: Robot) => {
     const text = match[5] || '';
     const limit = 10;
 
-    const messages = await searchStoredMessages(username, text, limit * 3);
+    const messages = await searchStoredMessages(username, text, limit);
     if (messages && messages.length > 0) {
-      const messageStrings = await Promise.all(randomItems(messages, limit).map(async (message) => await messageTmpl(message)));
-      say(messageStrings.join('\n'));
+      const messageStrings = await Promise.all(messages.map(async (message) => await messageTmpl(message)));
+      say(messageStrings.join('\n\n'));
+      messages.forEach(message => updateLastQuotedAt(message));
     }
     else {
       say('いいえ。');
