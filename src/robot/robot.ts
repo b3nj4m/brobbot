@@ -82,7 +82,7 @@ export default class Robot {
   }
 
   public userForName (name: string) {
-    return name ? Object.values(this.users).find(user => `${user.first_name} ${user.last_name} ${user.real_name}`.toLowerCase().includes(name.toLowerCase())) : undefined;
+    return name ? Object.values(this.users).find(user => `${user.first_name} ${user.real_name}`.toLowerCase().includes(name.toLowerCase())) : undefined;
   }
 
   public async allUsers () {
