@@ -59,17 +59,6 @@ function isRegex(text: string) {
   return regexTest.test(text);
 }
 
-function regexMatches(text: string, message: Message) {
-  var regex;
-  try {
-    regex = new RegExp(text.replace(regexExtract, '$1'), 'i');
-    return regex.test(message.text || '');
-  }
-  catch (err) {
-    return false;
-  }
-}
-
 interface MessageRow {
   id: number;
   text_raw: string;
@@ -229,7 +218,7 @@ const quote = async (robot: Robot) => {
     let results;
 
     try {
-      if (isRegex(text)) {
+      if (isRegex(username) || isRegex(text)) {
         results = (await sql`
           SELECT
             *
@@ -237,7 +226,7 @@ const quote = async (robot: Robot) => {
             ${sql(tableName)}
           WHERE
             is_stored = true
-            AND text_raw ~* ${text}
+            AND text_raw ~* ${(isRegex(username) ? username : text).replace(regexExtract, '$1')}
             ${user ? sql`AND user_id = ${user.id}` : sql``}
           ORDER BY
             random()
