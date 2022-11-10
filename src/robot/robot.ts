@@ -1,5 +1,6 @@
 import { AllMiddlewareArgs, App, LogLevel, SlackEventMiddlewareArgs } from "@slack/bolt";
 import { StringIndexed } from "@slack/bolt/dist/types/helpers";
+import pollen from "../modules/pollen";
 import quote from "../modules/quote";
 import weather from "../modules/weather";
 import RobotStorage from "./robotStorage";
@@ -64,6 +65,7 @@ export default class Robot {
       this.storage.initTables(),
       weather(this),
       quote(this),
+      pollen(this),
     ]);
     this.handleMessages();
   }
