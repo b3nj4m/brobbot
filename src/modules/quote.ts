@@ -88,7 +88,7 @@ function rowToMessage (row: MessageRow) {
 }
 
 function stringToTsQuery (text: string) {
-  return text.trim().split(/\s+/g).join(' & ');
+  return text.replace(/[^\w\s]*/g, '').trim().split(/\s+/g).join(' & ');
 }
 
 const quote = async (robot: Robot) => {
@@ -184,56 +184,86 @@ const quote = async (robot: Robot) => {
       return null;
     }
 
-    return await sql.begin(async (sql) => {
-      const result = await sql`
-        SELECT
-          *
-        FROM
-          ${sql(tableName)}
-        WHERE
-          text_searchable @@ to_tsquery(${stringToTsQuery(text)})
-          AND user_id = ${user.id}
-          AND is_stored = ${!is_stored}
-        ORDER BY
-          ${is_stored ? sql`created_at DESC` : sql`last_quoted_at DESC, created_at DESC`}
-        LIMIT 1
-      `;
+    try {
+      return await sql.begin(async (sql) => {
+        const result = await sql`
+          SELECT
+            *
+          FROM
+            ${sql(tableName)}
+          WHERE
+            text_searchable @@ to_tsquery(${stringToTsQuery(text)})
+            AND user_id = ${user.id}
+            AND is_stored = ${!is_stored}
+          ORDER BY
+            ${is_stored ? sql`created_at DESC` : sql`last_quoted_at DESC, created_at DESC`}
+          LIMIT 1
+        `;
 
-      const message = result[0] as MessageRow;
-      if (!message) {
-        console.warn(`couldn't find message matching ${text}`);
-        return null;
-      }
+        const message = result[0] as MessageRow;
+        if (!message) {
+          console.warn(`couldn't find message matching ${text}`);
+          return null;
+        }
 
-      await sql`
-        UPDATE
-          ${sql(tableName)}
-        SET
-          is_stored = ${is_stored}
-        WHERE
-          id = ${message.id}
-      `;
+        await sql`
+          UPDATE
+            ${sql(tableName)}
+          SET
+            is_stored = ${is_stored}
+          WHERE
+            id = ${message.id}
+        `;
 
-      return rowToMessage(message);
-    });
+        return rowToMessage(message);
+      });
+    }
+    catch (err) {
+      console.error(`error storing message: ${err}`);
+      return null;
+    }
   };
 
   const searchStoredMessages = async (username: string, text: string, limit: number = 20) => {
     const user = robot.userForName(username);
+    let results;
 
-    const results = (await sql`
-      SELECT
-        *
-      FROM
-        ${sql(tableName)}
-      WHERE
-        is_stored = true
-        ${(text || (username && !user)) ? sql`AND text_searchable @@ to_tsquery(${stringToTsQuery(user ? text : `${username} ${text}`)})` : sql``}
-        ${user ? sql`AND user_id = ${user.id}` : sql``}
-      ORDER BY
-        random()
-      LIMIT ${limit}
-    `) as MessageRow[];
+    try {
+      if (isRegex(text)) {
+        results = (await sql`
+          SELECT
+            *
+          FROM
+            ${sql(tableName)}
+          WHERE
+            is_stored = true
+            AND text_raw ~* ${text}
+            ${user ? sql`AND user_id = ${user.id}` : sql``}
+          ORDER BY
+            random()
+          LIMIT ${limit}
+        `) as MessageRow[];
+      }
+      else {
+        results = (await sql`
+          SELECT
+            *
+          FROM
+            ${sql(tableName)}
+          WHERE
+            is_stored = true
+            ${(text || (username && !user)) ? sql`AND text_searchable @@ to_tsquery(${stringToTsQuery(user ? text : `${username} ${text}`)})` : sql``}
+            ${user ? sql`AND user_id = ${user.id}` : sql``}
+          ORDER BY
+            random()
+          LIMIT ${limit}
+        `) as MessageRow[];
+      }
+    }
+    catch (err) {
+      console.error(`error searching quotes: ${err}`)
+      return [];
+    }
 
     return results.map(row => rowToMessage(row));
   }
