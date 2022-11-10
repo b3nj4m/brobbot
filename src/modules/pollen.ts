@@ -53,7 +53,7 @@ async function forecast(place: any) {
 function forecastString(data: any) {
   const {periods} = data;
   const [yesterday, today, tomorrow] = periods;
-  return `Today: ${forecastPeriod(today)}, Tomorrow: ${forecastPeriod(tomorrow)}`;
+  return `Today: ${forecastPeriod(today)},\nTomorrow: ${forecastPeriod(tomorrow)}`;
 }
 
 function forecastPeriod(period: any) {
@@ -84,7 +84,7 @@ const pollen = (robot: Robot) => {
     try {
       const {zip, text} = await geoCode(match[2]);
       const data = await forecast(zip);
-      say(`Pollen forecast for ${text}: ${forecastString(data)}`);
+      say(`Pollen forecast for ${text}:\n${forecastString(data)}`);
     }
     catch (err) {
       say(`No results for ${match[2]} :(`);
