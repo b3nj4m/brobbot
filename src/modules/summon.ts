@@ -38,7 +38,7 @@ const summon = (robot: Robot) => {
       console.log(`summon status: ${query}, ${status}, ${message}`);
 
       if (status === 'complete') {
-        say(`:smiling_imp: a <${imageUrl}|${query}> appears before you!`);
+        say(`:smiling_imp: <${imageUrl}|${query}> appears before you!`);
         return;
       }
 
