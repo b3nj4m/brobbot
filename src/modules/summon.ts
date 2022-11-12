@@ -15,8 +15,6 @@ const get = async (url: string, opts = {}) => {
   return (await response.json()) as any;
 };
 
-const escape = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
 const sleep = async (seconds: number) => {
   return new Promise((resolve) => setTimeout(resolve, seconds * 1000));
 }
@@ -40,7 +38,7 @@ const summon = (robot: Robot) => {
       console.log(`summon status: ${query}, ${status}, ${message}`);
 
       if (status === 'complete') {
-        say(`:smiling_imp: a <${imageUrl}|${escape(query)}> appears before you!`);
+        say(`:smiling_imp: a <${imageUrl}|${query}> appears before you!`);
         return;
       }
 
