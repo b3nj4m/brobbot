@@ -22,12 +22,12 @@ const sleep = async (seconds: number) => {
 const summon = (robot: Robot) => {
   robot.robotMessage(/^summon\s+(.+)/i, async ({say, match}) => {
     const query = match[1];
-    const {id} = await get("/prod/images", {
+    const {id} = await get('/prod/images', {
       method: 'post',
       body: JSON.stringify({prompt: query}),
     });
 
-    say(`:smiling_imp: performing the dark ritual...`);
+    say(':smiling_imp: performing the dark ritual...');
 
     const startTime = new Date().valueOf();
     const endTime = startTime + TIMEOUT * 1000;
@@ -39,6 +39,10 @@ const summon = (robot: Robot) => {
 
       if (status === 'complete') {
         say(`:smiling_imp: <${imageUrl}|${query}> appears before you!`);
+        return;
+      }
+      else if (status !== 'initialized') {
+        console.warn(`summon failed for: ${query} with status ${status}, ${message}`);
         return;
       }
 
