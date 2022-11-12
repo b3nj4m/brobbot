@@ -17,6 +17,10 @@ const get = async (url: string, opts = {}) => {
 
 const escape = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+const sleep = async (seconds: number) => {
+  return new Promise((resolve) => setTimeout(resolve, seconds * 1000));
+}
+
 const summon = (robot: Robot) => {
   robot.robotMessage(/^summon\s+(.+)/i, async ({say, match}) => {
     const query = match[1];
@@ -39,6 +43,8 @@ const summon = (robot: Robot) => {
         say(`:smiling_imp: a <${imageUrl}|${escape(query)}> appears before you!`);
         return;
       }
+
+      await sleep(3);
     }
     console.warn(`summon timed out for: ${query}`);
   });
