@@ -5,52 +5,8 @@
 //   BROBBOT_QUOTE_CACHE_SIZE=N - Cache the last N messages for each user for potential remembrance (default 25).
 
 import Robot, { Message, User } from "../robot/robot";
-import {random} from 'lodash';
 
 var CACHE_SIZE = process.env.BROBBOT_QUOTE_CACHE_SIZE ? parseInt(process.env.BROBBOT_QUOTE_CACHE_SIZE) : 25;
-
-const userNotFoundTmpls = [
-  (username: string) => `I don't know any ${username}`,
-  (username: string) => `${username} is lame.`,
-  () => 'Who?'
-];
-
-const notFoundTmpls = [
-  (text: string) => `I don't know anything about ${text}.`,
-  () => "Wat.",
-  () => "Huh?"
-];
-
-function randomItem(list: any[]) {
-  return list[random(list.length - 1)];
-}
-
-//get random subset of items (mutates original list)
-function randomItems(list: any[], limit: number) {
-  var messages = new Array(Math.min(list.length, limit));
-
-  for (var i = 0; i < messages.length; i++) {
-    messages[i] = list.splice(random(list.length - 1), 1)[0];
-  }
-
-  return messages;
-}
-
-function userNotFoundMessage(username: string) {
-  return randomItem(userNotFoundTmpls)({username: username});
-}
-
-function notFoundMessage(text: string) {
-  return randomItem(notFoundTmpls)({text: text});
-}
-
-function emptyStoreMessage() {
-  return "I don't remember any quotes...";
-}
-
-function isWords(text: string) {
-  return /\b[\w]{2,}\b/.test(text);
-}
 
 var regexTest = new RegExp("^/.+/$");
 var regexExtract = new RegExp("^/(.*)/$");

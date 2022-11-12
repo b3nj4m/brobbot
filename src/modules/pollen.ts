@@ -4,30 +4,13 @@
 // Configuration:
 //   BROBBOT_POLLEN_MAPBOX_KEY=mysecretkey - Secret key for the mapbox api
 
-import https from 'https';
+import fetch from 'node-fetch';
 import Robot from '../robot/robot';
 const MAPBOX_KEY = process.env.BROBBOT_POLLEN_MAPBOX_KEY || '';
 
-function get(url: string, opts?: any) {
-  return new Promise((resolve, reject) => {
-    https.get(url, opts || {}, (res) => {
-      const d: string[] = [];
-
-      if (res.statusCode !== 200) {
-        reject(new Error(`Request failed with status ${res.statusCode}`));
-      }
-
-      res.on('data', (chunk) => d.push(chunk));
-      res.on('end', () => {
-        try {
-          resolve(JSON.parse(d.join('')));
-        }
-        catch (err) {
-          reject(err);
-        }
-      });
-    });
-  });
+async function get(url: string, opts?: any) {
+  const response = await fetch(url, opts);
+  return await response.json();
 }
 
 async function geoCode(query: string) {
