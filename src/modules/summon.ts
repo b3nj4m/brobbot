@@ -1,9 +1,27 @@
+import { sample } from "lodash";
 import fetch from "node-fetch";
 import Robot from "../robot/robot";
 
 const API_URL = process.env.SUMMON_API_URL || '';
 const API_KEY = process.env.SUMMON_API_KEY || '';
 const TIMEOUT = Number(process.env.SUMMON_TIMEOUT || 120);
+
+const initMessages = [
+  'plagiarizing pixels',
+  'appropriating artworks',
+  'copying canvases',
+  'inscribing images',
+  'vectorizing visuals',
+  'diffusing drawings',
+  'fracturing figures',
+  'generating graphics',
+  'locating likenesses',
+  'coalescing collages',
+  'synthesizing sketches',
+  'disintegrating doodles',
+  'creating caricatures',
+  'hyperscaling hieroglyphs'
+];
 
 const get = async (url: string, opts = {}) => {
   const response = await fetch(`${API_URL}${url}`, {
@@ -27,7 +45,7 @@ const summon = (robot: Robot) => {
       body: JSON.stringify({prompt: query}),
     });
 
-    say(':smiling_imp: performing the dark ritual...');
+    say(`${sample(initMessages)}...`);
 
     const startTime = new Date().valueOf();
     const endTime = startTime + TIMEOUT * 1000;
@@ -38,7 +56,7 @@ const summon = (robot: Robot) => {
       console.log(`summon status: ${query}, ${status}, ${message}`);
 
       if (status === 'complete') {
-        say(`:smiling_imp: <${imageUrl}|${query}> appears before you!`);
+        say(`voilà! <${imageUrl}|${query}>`);
         return;
       }
       else if (status !== 'initialized') {
