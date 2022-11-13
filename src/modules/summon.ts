@@ -45,6 +45,12 @@ const summon = (robot: Robot) => {
       body: JSON.stringify({prompt: query}),
     });
 
+    if (!id) {
+      say('non.');
+      console.error(`summon failed to start for: ${query}`);
+      return;
+    }
+
     say(`${sample(initMessages)}...`);
 
     const startTime = new Date().valueOf();
