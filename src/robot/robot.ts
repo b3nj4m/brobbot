@@ -146,7 +146,7 @@ export default class Robot {
         return {
           type: 'section',
           text: {
-            type: 'mdkdwn',
+            type: 'mrkdwn',
             text: `#### ${group}\n\n${commands.map(([command, description]) => `${command}: ${description}`).join('\n\n')}`
           }
         }
