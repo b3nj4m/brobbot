@@ -58,7 +58,7 @@ function emojiName(iconName: string) {
 }
 
 const weather = async (robot: Robot) => {
-  robot.helpCommands('weather', [["weather `query`", "Get the weather forecast for `query`"]]);
+  robot.helpCommands('weather', [["weather [query]", "Get the weather forecast for `query`"]]);
 
   robot.robotMessage(/^(weather|forecast) (.+)/i, async ({say, match}) => {
     try {

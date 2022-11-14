@@ -47,8 +47,8 @@ function getRandIntInclusive(low: number, hi: number) {
 
 const roll = (robot: Robot) => {
   robot.helpCommands("roll", [
-    ["roll `dice`", "Roll `dice` and report the outcomes. E.g. `roll d20 + 4 2d6`"],
-    ["skill-check `dc` `modifier`", "Roll a d20, add the modifier and report the outcome."],
+    ["roll [dice]", "Roll `dice` and report the outcomes. E.g. `roll d20 + 4 2d6`"],
+    ["skill-check [dc] [modifier]", "Roll a d20, add the modifier and report the outcome."],
   ]);
 
   robot.robotMessage(/^roll\s+(.+)/i, async ({say, match}) => {

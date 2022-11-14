@@ -38,13 +38,13 @@ function stringToTsQuery (text: string) {
 
 const quote = async (robot: Robot) => {
   robot.helpCommands('quote', [
-    ['remember `user` `text`', 'remember most recent message from `user` containing `text`'],
-    ['forget `user` `text`', 'forget most recent remembered message from `user` containing `text`'],
-    ['quote [`user`] [`text`]', 'quote a random remembered message that is from `user` and/or contains `text`'],
-    ['quotemash [`user`] [`text`]', 'quote some random remembered messages that are from `user` and/or contain `text`'],
-    ['`user`mash', 'quote some random remembered messages that are from `user`'],
-    ['`text`mash', 'quote some random remembered messages that contain `text`'],
-    ['/ `regex` /mash', 'quote some random remembered messages that matches `regex` (no spaces, use \\s instead)'],
+    ['remember [user] [text]', 'remember most recent message from `user` containing `text`'],
+    ['forget [user] [text]', 'forget most recent remembered message from `user` containing `text`'],
+    ['quote [user?] [text?]', 'quote a random remembered message that is from `user` and/or contains `text`'],
+    ['quotemash [user?] [text?]', 'quote some random remembered messages that are from `user` and/or contain `text`'],
+    ['[user]mash', 'quote some random remembered messages that are from `user`'],
+    ['[text]mash', 'quote some random remembered messages that contain `text`'],
+    ['/[regex]/mash', 'quote some random remembered messages that matches `regex` (no spaces, use \\s instead)'],
   ]);
 
   const tableName = robot.storage.tableName('quotes');

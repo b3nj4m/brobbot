@@ -38,7 +38,7 @@ const sleep = async (seconds: number) => {
 }
 
 const summon = (robot: Robot) => {
-  robot.helpCommands('summon', [['summon `prompt`', 'generate an image based on `prompt`']]);
+  robot.helpCommands('summon', [['summon [prompt]', 'generate an image based on `prompt`']]);
 
   robot.robotMessage(/^summon\s+(.+)/i, async ({say, match}) => {
     const query = match[1];

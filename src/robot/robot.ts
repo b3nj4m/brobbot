@@ -1,5 +1,6 @@
 import { AllMiddlewareArgs, App, LogLevel, SlackEventMiddlewareArgs } from "@slack/bolt";
 import { StringIndexed } from "@slack/bolt/dist/types/helpers";
+import { flatten } from "lodash";
 import pollen from "../modules/pollen";
 import quote from "../modules/quote";
 import summon from "../modules/summon";
@@ -143,24 +144,36 @@ export default class Robot {
     this.robotMessage(/^help\s*$/i, async ({say}) => {
       const blocks = Object.keys(this.helps).map((group) => {
         const commands = this.helps[group];
-        return {
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: `#### ${group}\n\n${commands.map(([command, description]) => `${command}: ${description}`).join('\n\n')}`
-          }
-        }
-      });
-      say({
-        blocks: [
+        return [
+          {
+            type: 'header',
+            text: {
+              type: 'plain_text',
+              text: group
+            }
+          },
           {
             type: 'section',
             text: {
               type: 'mrkdwn',
-              text: '### brobbot commands'
+              text: commands.map(([command, description]) => `\`${command}\`: ${description}`).join('\n\n')
             }
           },
-          ...blocks
+          {
+            type: 'divider'
+          }
+        ];
+      });
+      say({
+        blocks: [
+          {
+            type: 'header',
+            text: {
+              type: 'plain_text',
+              text: 'brobbot commands'
+            }
+          },
+          ...flatten(blocks).slice(0, -1),
         ]
       })
     });
