@@ -3,6 +3,7 @@ import { StringIndexed } from "@slack/bolt/dist/types/helpers";
 import { flatten } from "lodash";
 import pollen from "../modules/pollen";
 import quote from "../modules/quote";
+import roll from "../modules/roll";
 import summon from "../modules/summon";
 import weather from "../modules/weather";
 import RobotStorage from "./robotStorage";
@@ -69,6 +70,7 @@ export default class Robot {
       quote(this),
       pollen(this),
       summon(this),
+      roll(this),
     ]);
     this.handleMessages();
     this.handleHelp();
