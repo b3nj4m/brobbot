@@ -52,14 +52,13 @@ const emojiIcons: Record<string, string> = {
   'thunderstorm': 'lightning_cloud_and_rain',
   'hail': 'snow_cloud'
 };
+
 function emojiName(iconName: string) {
   return emojiIcons[iconName] ? `:${emojiIcons[iconName]}:` : '';
 }
 
-
-//TODO params of app, robot(storage, helpCommand, etc.)
 const weather = async (robot: Robot) => {
-  robot.helpCommand("weather `query`", "Get the weather forecast for `query`");
+  robot.helpCommands('weather', [["weather `query`", "Get the weather forecast for `query`"]]);
 
   robot.robotMessage(/^(weather|forecast) (.+)/i, async ({say, match}) => {
     try {

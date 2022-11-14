@@ -61,7 +61,7 @@ function forecastIcon(index: number) {
 
 
 const pollen = (robot: Robot) => {
-  robot.helpCommand("brobbot pollen `query`", "Get the pollen forecast for `query`");
+  robot.helpCommands('pollen', [["pollen `query`", "Get the pollen forecast for `query`"]]);
 
   robot.robotMessage(/^(pollen|cedar) (.+)/i, async ({say, message, match}) => {
     try {

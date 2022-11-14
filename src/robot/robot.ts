@@ -30,7 +30,7 @@ export type RobotMessageHandler = (e: SlackEventMiddlewareArgs<"message"> & AllM
 export default class Robot {
   public storage: RobotStorage;
   public app: App;
-  public helps: [string, string][];
+  public helps: Record<string, [string, string][]>;
   public users: Record<string, User>;
   public listeners: [string | RegExp, RobotMessageHandler][];
   public robotListeners: [string | RegExp, RobotMessageHandler][];
@@ -48,7 +48,7 @@ export default class Robot {
       port: parseInt(process.env.PORT || '') || 3000,
     });
 
-    this.helps = [];
+    this.helps = {};
     this.users = {};
     this.listeners = [];
     this.robotListeners = [];
@@ -73,8 +73,8 @@ export default class Robot {
     this.handleHelp();
   }
 
-  public helpCommand (command: string, description: string) {
-    this.helps.push([command, description]);
+  public helpCommands (group: string, commands: [string, string][]) {
+    this.helps[group] = commands;
   }
 
   public async userForId (id: string) {
@@ -138,9 +138,31 @@ export default class Robot {
     });
   }
 
+  //render a markdown block with each module in its own section
   private handleHelp() {
     this.robotMessage(/^help\s*$/i, async ({say}) => {
-      say(this.helps.map(([command, description]) => `${command}: ${description}`).join('\n\n'));
+      const blocks = Object.keys(this.helps).map((group) => {
+        const commands = this.helps[group];
+        return {
+          type: 'section',
+          text: {
+            type: 'mdkdwn',
+            text: `#### ${group}\n\n${commands.map(([command, description]) => `${command}: ${description}`).join('\n\n')}`
+          }
+        }
+      });
+      say({
+        blocks: [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: '### brobbot commands'
+            }
+          },
+          ...blocks
+        ]
+      })
     });
   }
 }
