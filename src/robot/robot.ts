@@ -70,6 +70,7 @@ export default class Robot {
       summon(this),
     ]);
     this.handleMessages();
+    this.handleHelp();
   }
 
   public helpCommand (command: string, description: string) {
@@ -134,6 +135,12 @@ export default class Robot {
           })
         }
       }
+    });
+  }
+
+  private handleHelp() {
+    this.robotMessage(/^help\s*$/i, async ({say}) => {
+      say(this.helps.map(([command, description]) => `${command}: ${description}`).join('\n\n'));
     });
   }
 }
