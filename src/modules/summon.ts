@@ -67,7 +67,7 @@ const summon = (robot: Robot) => {
         say(`voilà! <${imageUrl}|${query}>`);
         return;
       }
-      else if (status !== 'initialized') {
+      else if (status === 'error') {
         console.warn(`summon failed for: ${query} with status ${status}, ${message}`);
         return;
       }
