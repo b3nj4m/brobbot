@@ -21,14 +21,14 @@ async function geoCode(query: string, authToken: string) {
 
   const data = await get(`https://maps-api.apple.com/v1/geocode?q=${encodeURIComponent(query)}&lang=en-US`, mapsToken);
 
-  console.log(`location: ${data}`);
+  console.log(`location: ${JSON.stringify(data)}`);
   return data.results[0];
 }
 
 async function forecast(place: any, authToken: string) {
     const forecast = await get(`https://weatherkit.apple.com/api/v1/weather/en-US/${encodeURIComponent(place.coordinate.latitude)}/${place.coordinate.longitude}?country=${place.countryCode}&dataSets=currentWeather,forecastDaily,weatherAlerts`, authToken);
 
-    console.log(`forecast: ${forecast}`);
+    console.log(`forecast: ${JSON.stringify(forecast)}`);
     return {place, forecast};
 }
 
@@ -91,7 +91,7 @@ async function generateMapsToken(authToken: string) {
 
   const json = await response.json();
 
-  console.log(`maps token: ${json}`);
+  console.log(`maps token: ${JSON.stringify(json)}`);
 
   return json.accessToken;
 }
