@@ -26,7 +26,7 @@ async function geoCode(query: string, authToken: string) {
 }
 
 async function forecast(place: any, authToken: string) {
-    const forecast = await get(`https://weatherkit.apple.com/api/v1/weather/en-US/${encodeURIComponent(place.coordinate.latitude)}/${place.coordinate.longitude}?country=${place.countryCode}&dataSets=currentWeather,forecastDaily,weatherAlerts`, authToken);
+    const forecast = await get(`https://weatherkit.apple.com/api/v1/weather/en-US/${encodeURIComponent(place.coordinate.latitude)}/${place.coordinate.longitude}?country=${place.countryCode}&dataSets=currentWeather,forecastDaily,weatherAlerts&timezone=pacific`, authToken);
 
     console.log(`forecast: ${JSON.stringify(forecast)}`);
     return {place, forecast};
