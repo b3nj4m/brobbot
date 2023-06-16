@@ -45,7 +45,7 @@ function forecastString(fc: any, geo: any) {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `*Currently*: ${emojiName(current.weather[0].icon)} ${current.weather[0]?.description || ''} ${current.temp}°F.\n*Today*: ${emojiName(current.weather[0].icon)} high: ${daily[0].temp.max}°F, low: ${daily[0].temp.min}°F ${daily[0].summary} \n*Tomorrow*:  ${emojiName(daily[1].weather[0].icon)} high: ${daily[1].temp.max}°F, low: ${daily[1].temp.min}°F ${daily[1].summary}`
+          text: `*Currently*: ${emojiName(current.weather[0].icon)} ${current.weather[0]?.description || ''} ${current.temp}°F.\n*Today*: ${emojiName(current.weather[0].icon)} high: ${daily[0].temp.max}°F, low: ${daily[0].temp.min}°F. ${daily[0].summary} \n*Tomorrow*:  ${emojiName(daily[1].weather[0].icon)} high: ${daily[1].temp.max}°F, low: ${daily[1].temp.min}°F. ${daily[1].summary}`
         }
       }
     ]
