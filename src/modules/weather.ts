@@ -66,7 +66,7 @@ const weather = async (robot: Robot) => {
     try {
       const geo = await geoCode(match[2]);
       const fc = await forecast(geo);
-      await say(`Weather for ${fc.place.name}: ${forecastString(fc)}`);
+      await say(`Weather for ${geo.text}: ${forecastString(fc)}`);
     }
     catch (err) {
       console.error(`brobbot-weather error: ${err}`);
