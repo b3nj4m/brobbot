@@ -1,132 +1,71 @@
 import fetch from 'node-fetch';
 import Robot from '../robot/robot';
-import * as jose from 'jose';
 
-const BROBBOT_WEATHER_APPLE_PRIVATE_KEY = process.env.BROBBOT_WEATHER_APPLE_PRIVATE_KEY || '';
-const BROBBOT_WEATHER_APPLE_TEAM_ID = process.env.BROBBOT_WEATHER_APPLE_TEAM_ID || '';
-const BROBBOT_WEATHER_APPLE_SERVICE_ID = process.env.BROBBOT_WEATHER_APPLE_SERVICE_ID || '';
-const BROBBOT_WEATHER_APPLE_KEY_ID = process.env.BROBBOT_WEATHER_APPLE_KEY_ID || '';
+const BROBBOT_WEATHER_MAPBOX_KEY = process.env.BROBBOT_WEATHER_MAPBOX_KEY || '';
+const BROBBOT_WEATHER_OW_API_KEY = process.env.BROBBOT_WEATHER_OW_API_KEY || '';
 
-async function get(url: string, authToken: string) {
-  const response = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${authToken}`
-    }
-  });
+async function get(url: string) {
+  const response = await fetch(url);
+
+  console.log(`response code: ${response.status}`);
+
   return await response.json();
 }
 
-async function geoCode(query: string, authToken: string) {
-  const mapsToken = await generateMapsToken(authToken);
-
-  const data = await get(`https://maps-api.apple.com/v1/geocode?q=${encodeURIComponent(query)}&lang=en-US`, mapsToken);
+async function geoCode(query: string) {
+  const data = await get(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${encodeURIComponent(BROBBOT_WEATHER_MAPBOX_KEY)}&limit=1`);
 
   console.log(`location: ${JSON.stringify(data)}`);
-  return data.results[0];
+
+  const {center, text} = data.features[0];
+  return {center: center.reverse(), text};
 }
 
-async function forecast(place: any, authToken: string) {
-    const forecast = await get(`https://weatherkit.apple.com/api/v1/weather/en-US/${encodeURIComponent(place.coordinate.latitude)}/${place.coordinate.longitude}?country=${place.countryCode}&dataSets=currentWeather,forecastDaily,weatherAlerts&timezone=pacific`, authToken);
+async function forecast(place: any) {
+    const forecast = await get(`https://api.openweathermap.org/data/3.0/onecall?units=imperial&lat=${place.center[0]}&lon=${place.center[1]}&appid=${BROBBOT_WEATHER_OW_API_KEY}`);
 
     console.log(`forecast: ${JSON.stringify(forecast)}`);
+
     return {place, forecast};
 }
 
 function forecastString(data: any) {
-  const {currentWeather, forecastDaily} = data.forecast;
-  return `currently ${condition(currentWeather.conditionCode)} ${currentWeather.temperature}°C\nexpected high ${forecastDaily.days[0].temperatureMax}°C\n${condition(forecastDaily.days[0].conditionCode)}`;
+  const {current, daily} = data.forecast;
+  return `currently ${current.weather[0]?.description || ''} ${current.temp}°F ${emojiName(current.weather[0].icon)}\nexpected high ${daily[0].temp.max}°F ${daily[0].summary} ${emojiName(current.weather[0].icon)}\ntomorrow: expected high ${daily[1].temp.max}°F ${daily[1].summary} ${emojiName(daily[1].weather.icon)}`;
 }
 
-const emojiIcons: Record<string, {description: string; icon: string}> = {
-  BlowingDust: { description: 'Blowing dust', icon: 'wind_blowing_face' },
-  Clear: { description: 'Clear', icon: 'sun_with_face' },
-  Cloudy: { description: 'Cloudy', icon: 'cloud' },
-  Foggy: { description: 'Fog', icon: 'fog' },
-  Haze: { description: 'Haze', icon: 'fog' },
-  MostlyClear: { description: 'Mostly clear', icon: 'partly_sunny' },
-  MostlyCloudy: { description: 'Mostly cloudy', icon: 'partly_sunny' },
-  PartlyCloudy: { description: 'Partly cloudy', icon: 'partly_sunny' },
-  Smoky: { description: 'Smokey', icon: 'fog' },
-  Breezy: { description: 'Breezy', icon: 'wind_blowing_face' },
-  Windy: { description: 'Windy', icon: 'wind_blowing_face' },
-  Drizzle: { description: 'Drizzle', icon: 'rain_cloud' },
-  HeavyRain: { description: 'Heavy rain', icon: 'rain_cloud' },
-  IsolatedThunderstorms: { description: 'Isolated thunderstorms', icon: 'lightning_cloud_and_rain' },
-  Rain: { description: 'Rain', icon: 'rain_cloud' },
-  SunShowers: { description: 'Rain with visible sun', icon: 'partly_sunny' },
-  ScatteredThunderstorms: { description: 'Numerous thunderstorms spread across up to 50% of the forecast area', icon: 'lightning_cloud_and_rain' },
-  StrongStorms: { description: 'Severe thunderstorms', icon: 'lightning_cloud_and_rain' },
-  Thunderstorms: { description: 'Thunderstorms', icon: 'lightning_cloud_and_rain' },
-  Frigid: { description: 'Frigid conditions, low temperatures, or ice crystals', icon: 'ice_cube' },
-  Hail: { description: 'Hail', icon: 'snow_cloud' },
-  Hot: { description: 'Hot', icon: 'fire' },
-  Flurries: { description: 'Flurries', icon: 'snowman' },
-  Sleet: { description: 'Sleet', icon: 'snow_cloud' },
-  Snow: { description: 'Snow', icon: 'snowman' },
-  SunFlurries: { description: 'Snow flurries with visible sun', icon: 'partly_sunny' },
-  WintryMix: { description: 'Wintry mix', icon: 'snow_cloud' },
-  Blizzard: { description: 'Blizzard', icon: 'snow_cloud' },
-  BlowingSnow: { description: 'Blowing or drifting snow', icon: 'snow_cloud' },
-  FreezingDrizzle: { description: 'Freezing drizzle', icon: 'snow_cloud' },
-  FreezingRain: { description: 'Freezing rain', icon: 'snow_cloud' },
-  HeavySnow: { description: 'Heavy snow', icon: 'snow_cloud' },
-  Hurricane: { description: 'Hurricane', icon: 'cyclone' },
-  TropicalStorm: { description: 'Tropical storm', icon: 'lightning_cloud_and_rain' },
+const emojiIcons: Record<string, string> = {
+  '01d': 'sun_with_face',
+  '01n': 'moon_with_face',
+  '02d': 'partly_sunny',
+  '02n': 'partly_sunny',
+  '03d': 'partly_sunny',
+  '03n': 'partly_sunny',
+  '04d': 'partly_sunny',
+  '04n': 'partly_sunny',
+  '09d': 'rain_cloud',
+  '09n': 'rain_cloud',
+  '10d': 'rain_cloud',
+  '10n': 'rain_cloud',
+  '11d': 'lightning_cloud_and_rain',
+  '11n': 'lightning_cloud_and_rain',
+  '13d': 'snow_cloud',
+  '13n': 'snow_cloud',
+  '50d': 'fog',
+  '50n': 'fog',
 };
 
 function emojiName(iconName: string) {
-  return emojiIcons[iconName] ? `:${emojiIcons[iconName].icon}:` : '';
-}
-
-function condition(conditionCode: string) {
-  return emojiIcons[conditionCode] ? emojiIcons[conditionCode].description : '';
-}
-
-async function generateMapsToken(authToken: string) {
-  const response = await fetch('https://maps-api.apple.com/v1/token', {
-    headers: {
-      'Authorization': `Bearer ${authToken}`
-    }
-  });
-
-  const json = await response.json();
-
-  console.log(`maps token: ${JSON.stringify(json)}`);
-
-  return json.accessToken;
-}
-
-async function generateToken() {
-  const alg = 'ES256';
-
-  const privateKey = await jose.importPKCS8(BROBBOT_WEATHER_APPLE_PRIVATE_KEY, alg);
-
-  const jwt = await new jose.SignJWT({})
-    .setProtectedHeader({
-      alg,
-      kid: BROBBOT_WEATHER_APPLE_KEY_ID,
-      id: `${BROBBOT_WEATHER_APPLE_TEAM_ID}.${BROBBOT_WEATHER_APPLE_SERVICE_ID}`
-    })
-    .setIssuedAt()
-    .setIssuer(BROBBOT_WEATHER_APPLE_TEAM_ID)
-    .setSubject(BROBBOT_WEATHER_APPLE_SERVICE_ID)
-    .setExpirationTime('24h')
-    .sign(privateKey);
-
-  console.log(`jwt: ${jwt}`);
-
-  return jwt;
+  return emojiIcons[iconName] ? `:${emojiIcons[iconName]}:` : '';
 }
 
 const weather = async (robot: Robot) => {
-  const authToken = await generateToken();
-
   robot.helpCommands('weather', [["weather [query]", "Get the weather forecast for `query`"]]);
 
   robot.robotMessage(/^(weather|forecast) (.+)/i, async ({say, match}) => {
     try {
-      const geo = await geoCode(match[2], authToken);
-      const fc = await forecast(geo, authToken);
+      const geo = await geoCode(match[2]);
+      const fc = await forecast(geo);
       await say(`Weather for ${fc.place.name}: ${forecastString(fc)}`);
     }
     catch (err) {
