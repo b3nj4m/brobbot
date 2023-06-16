@@ -29,9 +29,27 @@ async function forecast(place: any) {
     return {place, forecast};
 }
 
-function forecastString(data: any) {
-  const {current, daily} = data.forecast;
-  return `currently ${current.weather[0]?.description || ''} ${current.temp}°F ${emojiName(current.weather[0].icon)}\nexpected high ${daily[0].temp.max}°F ${daily[0].summary} ${emojiName(current.weather[0].icon)}\ntomorrow: expected high ${daily[1].temp.max}°F ${daily[1].summary} ${emojiName(daily[1].weather.icon)}`;
+function forecastString(fc: any, geo: any) {
+  const {current, daily} = fc.forecast;
+  const {text} = geo;
+  return {
+    blocks: [
+      {
+        type: 'header',
+        text: {
+          type: 'plain_text',
+          text: `Weather for ${text}`
+        }
+      },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `*Currently*: ${current.weather[0]?.description || ''} ${current.temp}°F ${emojiName(current.weather[0].icon)}\n*Today*: expected high/low ${daily[0].temp.max}/${daily[0].temp.min}°F ${daily[0].summary} ${emojiName(current.weather[0].icon)}\n*Tomorrow*: expected high/low ${daily[1].temp.max}/${daily[1].temp.min}°F ${daily[1].summary} ${emojiName(daily[1].weather.icon)}`
+        }
+      }
+    ]
+  };
 }
 
 const emojiIcons: Record<string, string> = {
@@ -66,7 +84,7 @@ const weather = async (robot: Robot) => {
     try {
       const geo = await geoCode(match[2]);
       const fc = await forecast(geo);
-      await say(`Weather for ${geo.text}: ${forecastString(fc)}`);
+      await say(forecastString(fc, geo));
     }
     catch (err) {
       console.error(`brobbot-weather error: ${err}`);
