@@ -88,7 +88,7 @@ const quote = async (robot: Robot) => {
   const mashTmpl = async (messages: Array<Message>, searchType: SearchType, searchString: string, user?: User) => {
     let header;
     if (searchType === 'REGEX') {
-      header = `quotes matching ` + '/`' + searchString + '/`:';
+      header = `quotes matching ` + '`' + searchString + '`:';
     }
     else if (searchType === 'USER') {
       if (searchString) {
@@ -99,7 +99,12 @@ const quote = async (robot: Robot) => {
       }
     }
     else {
-      header = `quotes matching *${searchString}*:`;
+      if (searchString) {
+        header = `quotes matching *${searchString}*:`;
+      }
+      else {
+        header = 'random quotes:';
+      }
     }
     const messageBlocks = [{
       type: 'section',
@@ -284,13 +289,17 @@ const quote = async (robot: Robot) => {
   };
 
   const getSearchString = (username: string, text: string, searchType: SearchType): string => {
+    let searchString;
     if (searchType === 'REGEX') {
-      return isRegex(username) ? username : text;
+      searchString = isRegex(username) ? username : text;
     }
-    if (searchType === 'USER') {
-      return text;
+    else if (searchType === 'USER') {
+      searchString = text;
     }
-    return `${username} ${text}`;
+    else {
+      searchString = `${username} ${text}`;
+    }
+    return searchString.trim();
   };
 
   const searchStoredMessages = async (searchString: string, searchType: SearchType, user?: User, limit: number = 20) => {
