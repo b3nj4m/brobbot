@@ -113,7 +113,7 @@ const quote = async (robot: Robot) => {
     const user = await robot.userForId(message.user);
     const date = message.created_at || new Date();
     //date created at started being tracked was 2022-10-30
-    const formattedDate = `${format(date, 'YYYY-MM-dd') === '2022-10-30' ? 'sometime before ' : ''}${format(date, 'PPP')}`;
+    const formattedDate = `${format(date, 'yyyy-MM-dd') === '2022-10-30' ? 'sometime before ' : ''}${format(date, 'PPP')}`;
     return `> ${message.text}\n> - ${user.first_name || user.real_name}, ${formattedDate}`;
   };
 
