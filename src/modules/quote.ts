@@ -341,17 +341,22 @@ const quote = async (robot: Robot) => {
     const text = match[5] || '';
     const limit = 10;
 
-    const user = robot.userForName(username);
-    const searchType = getSearchType(username, text, user);
-    const searchString = getSearchString(username, text, searchType);
-    const messages = await searchStoredMessages(searchString, searchType, user, limit);
-    console.log('search type', searchType, 'search string', searchString, 'user', user);
-    if (messages && messages.length > 0) {
-      say(await mashTmpl(messages, searchType, searchString, user));
-      messages.forEach(message => updateLastQuotedAt(message));
+    try {
+      const user = robot.userForName(username);
+      const searchType = getSearchType(username, text, user);
+      const searchString = getSearchString(username, text, searchType);
+      const messages = await searchStoredMessages(searchString, searchType, user, limit);
+      console.log('search type', searchType, 'search string', searchString, 'user', user);
+      if (messages && messages.length > 0) {
+        say(await mashTmpl(messages, searchType, searchString, user));
+        messages.forEach(message => updateLastQuotedAt(message));
+      }
+      else {
+        say(await noResultsTmpl(searchType, searchString, user));
+      }
     }
-    else {
-      say(await noResultsTmpl(searchType, searchString, user));
+    catch (err) {
+      console.error('error', err);
     }
   });
 
