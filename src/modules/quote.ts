@@ -109,6 +109,48 @@ const quote = async (robot: Robot) => {
     };
   };
 
+  const rememberedTmpl = async (message: Message) => {
+    return {
+      blocks: [
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `remembered:`
+          }
+        },
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: await messageTmpl(message)
+          }
+        }
+      ]
+    }
+  };
+
+  const forgotTmpl = async (message: Message) => {
+    return {
+      blocks: [
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `forgot:`
+          }
+        },
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: await messageTmpl(message)
+          }
+        }
+      ]
+    }
+  };
+
   const messageTmpl = async (message: Message): Promise<string> => {
     const user = await robot.userForId(message.user);
     const date = message.created_at || new Date();
@@ -296,8 +338,7 @@ const quote = async (robot: Robot) => {
 
     const message = await storeMessage(username, text, true);
     if (message) {
-      const messageString = await messageTmpl(message);
-      say(`remembering ${messageString}`);
+      say(await rememberedTmpl(message));
     }
     else {
       say('no.');
@@ -310,8 +351,7 @@ const quote = async (robot: Robot) => {
 
     const message = await storeMessage(username, text, false);
     if (message) {
-      const messageString = await messageTmpl(message);
-      say(`forgot: ${messageString}`);
+      say(await forgotTmpl(message));
     }
     else {
       say('nope.');
@@ -341,22 +381,17 @@ const quote = async (robot: Robot) => {
     const text = match[5] || '';
     const limit = 10;
 
-    try {
-      const user = robot.userForName(username);
-      const searchType = getSearchType(username, text, user);
-      const searchString = getSearchString(username, text, searchType);
-      const messages = await searchStoredMessages(searchString, searchType, user, limit);
-      console.log('search type', searchType, 'search string', searchString, 'user', user);
-      if (messages && messages.length > 0) {
-        say(await mashTmpl(messages, searchType, searchString, user));
-        messages.forEach(message => updateLastQuotedAt(message));
-      }
-      else {
-        say(await noResultsTmpl(searchType, searchString, user));
-      }
+    const user = robot.userForName(username);
+    const searchType = getSearchType(username, text, user);
+    const searchString = getSearchString(username, text, searchType);
+    const messages = await searchStoredMessages(searchString, searchType, user, limit);
+    console.log('search type', searchType, 'search string', searchString, 'user', user);
+    if (messages && messages.length > 0) {
+      say(await mashTmpl(messages, searchType, searchString, user));
+      messages.forEach(message => updateLastQuotedAt(message));
     }
-    catch (err) {
-      console.error('error', err);
+    else {
+      say(await noResultsTmpl(searchType, searchString, user));
     }
   });
 
