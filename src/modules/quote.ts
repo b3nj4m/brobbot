@@ -86,11 +86,26 @@ const quote = async (robot: Robot) => {
   };
 
   const mashTmpl = async (messages: Array<Message>, searchType: SearchType, searchString: string, user?: User) => {
+    let header;
+    if (searchType === 'REGEX') {
+      header = `quotes matching ` + '/`' + searchString + '/`:';
+    }
+    else if (searchType === 'USER') {
+      if (searchString) {
+        header = `quotes matching *${searchString}* from *${user?.first_name || user?.real_name}*:`;
+      }
+      else {
+        header = `quotes from *${user?.first_name || user?.real_name}*:`;
+      }
+    }
+    else {
+      header = `quotes matching *${searchString}*:`;
+    }
     const messageBlocks = [{
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: `quotes matching ${searchType === 'REGEX' ? '`' + searchString + '`' : `*${searchString}*`}${searchType === 'USER' ? (user?.first_name || user?.real_name) : ''}:`
+        text: header
       }
     }];
 
