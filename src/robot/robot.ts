@@ -25,6 +25,7 @@ export interface Message {
   type: string;
   user: string;
   id: number;
+  created_at?: Date;
 }
 
 export type RobotMessageHandler = (e: SlackEventMiddlewareArgs<"message"> & AllMiddlewareArgs<StringIndexed> & {match: RegExpMatchArray}) => Promise<void>;

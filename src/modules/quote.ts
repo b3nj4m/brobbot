@@ -5,6 +5,7 @@
 //   BROBBOT_QUOTE_CACHE_SIZE=N - Cache the last N messages for each user for potential remembrance (default 25).
 
 import Robot, { Message, User } from "../robot/robot";
+import {format} from "date-fns";
 
 var CACHE_SIZE = process.env.BROBBOT_QUOTE_CACHE_SIZE ? parseInt(process.env.BROBBOT_QUOTE_CACHE_SIZE) : 25;
 
@@ -14,6 +15,8 @@ var regexExtract = new RegExp("^/(.*)/$");
 function isRegex(text: string) {
   return regexTest.test(text);
 }
+
+type SearchType = 'REGEX' | 'USER' | 'TEXT';
 
 interface MessageRow {
   id: number;
@@ -29,6 +32,7 @@ function rowToMessage (row: MessageRow) {
     id: row.id,
     text: row.text_raw,
     user: row.user_id,
+    created_at: new Date(row.created_at),
   } as Message;
 }
 
@@ -69,9 +73,48 @@ const quote = async (robot: Robot) => {
   await sql`CREATE INDEX IF NOT EXISTS last_quoted_at_idx ON ${sql(tableName)} (last_quoted_at)`;
   await sql`CREATE INDEX IF NOT EXISTS is_stored_idx ON ${sql(tableName)} (is_stored)`;
 
-  const messageTmpl = async (message: Message) => {
+  const noResultsTmpl = async (searchType: SearchType, searchString: string, user?: User) => {
+    return {
+      blocks: [{
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `no results for ${searchType === 'REGEX' ? '`/' + searchString + '/`' : `*${searchString}*`}${searchType === 'USER' ? ` from ${(user?.first_name || user?.real_name)}` : ''}.`
+        }
+      }]
+    }
+  };
+
+  const mashTmpl = async (messages: Array<Message>, searchType: SearchType, searchString: string, user?: User) => {
+    const messageBlocks = [{
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: `quotes matching ${searchType === 'REGEX' ? '`' + searchString + '`' : `*${searchString}*`}${searchType === 'USER' ? (user?.first_name || user?.real_name) : ''}:`
+      }
+    }];
+
+    for (var i = 0; i < messages.length; i++) {
+      messageBlocks.push({
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: await messageTmpl(messages[i])
+        }
+      });
+    }
+
+    return {
+      blocks: messageBlocks
+    };
+  };
+
+  const messageTmpl = async (message: Message): Promise<string> => {
     const user = await robot.userForId(message.user);
-    return `${user.first_name || user.real_name}: ${message.text}`;
+    const date = message.created_at || new Date();
+    //date created at started being tracked was 2022-10-30
+    const formattedDate = `${format(date, 'YYYY-MM-dd') === '2022-10-30' ? 'sometime before ' : ''}${format(date, 'PPP')}`;
+    return `> ${message.text}\n> - ${user.first_name || user.real_name}, ${formattedDate}`;
   };
 
   const cacheMessage = async (message: Message) => {
@@ -171,12 +214,33 @@ const quote = async (robot: Robot) => {
     }
   };
 
-  const searchStoredMessages = async (username: string, text: string, limit: number = 20) => {
-    const user = robot.userForName(username);
+  const getSearchType = (username: string, text: string, user?: User): SearchType => {
+    if (isRegex(username) || isRegex(text)) {
+      return 'REGEX';
+    }
+
+    if (user) {
+      return 'USER';
+    }
+
+    return 'TEXT';
+  };
+
+  const getSearchString = (username: string, text: string, searchType: SearchType): string => {
+    if (searchType === 'REGEX') {
+      return isRegex(username) ? username : text;
+    }
+    if (searchType === 'USER') {
+      return text;
+    }
+    return `${username} ${text}`;
+  };
+
+  const searchStoredMessages = async (searchString: string, searchType: SearchType, user?: User, limit: number = 20) => {
     let results;
 
     try {
-      if (isRegex(username) || isRegex(text)) {
+      if (searchType === 'REGEX') {
         results = (await sql`
           SELECT
             *
@@ -184,7 +248,7 @@ const quote = async (robot: Robot) => {
             ${sql(tableName)}
           WHERE
             is_stored = true
-            AND text_raw ~* ${(isRegex(username) ? username : text).replace(regexExtract, '$1')}
+            AND text_raw ~* ${searchString.replace(regexExtract, '$1')}
             ${user ? sql`AND user_id = ${user.id}` : sql``}
           ORDER BY
             random()
@@ -199,7 +263,7 @@ const quote = async (robot: Robot) => {
             ${sql(tableName)}
           WHERE
             is_stored = true
-            ${(text || (username && !user)) ? sql`AND text_searchable @@ to_tsquery(${stringToTsQuery(user ? text : `${username} ${text}`)})` : sql``}
+            ${searchString ? sql`AND text_searchable @@ to_tsquery(${stringToTsQuery(searchString)})` : sql``}
             ${user ? sql`AND user_id = ${user.id}` : sql``}
           ORDER BY
             random()
@@ -259,15 +323,16 @@ const quote = async (robot: Robot) => {
     const username = match[2] || '';
     const text = match[4] || '';
 
-    const messages = await searchStoredMessages(username, text, 1);
+    const user = robot.userForName(username);
+    const searchType = getSearchType(username, text, user);
+    const searchString = getSearchString(username, text, searchType);
+    const messages = await searchStoredMessages(searchString, searchType, user, 1);
     if (messages && messages.length > 0) {
-      const message = messages[0];
-      const messageString = await messageTmpl(message);
-      say(messageString);
-      updateLastQuotedAt(message);
+      say(await mashTmpl(messages, searchType, searchString, user));
+      updateLastQuotedAt(messages[0]);
     }
     else {
-      say('nah.');
+      say(await noResultsTmpl(searchType, searchString, user));
     }
   });
 
@@ -276,14 +341,17 @@ const quote = async (robot: Robot) => {
     const text = match[5] || '';
     const limit = 10;
 
-    const messages = await searchStoredMessages(username, text, limit);
+    const user = robot.userForName(username);
+    const searchType = getSearchType(username, text, user);
+    const searchString = getSearchString(username, text, searchType);
+    const messages = await searchStoredMessages(searchString, searchType, user, limit);
+    console.log('search type', searchType, 'search string', searchString, 'user', user);
     if (messages && messages.length > 0) {
-      const messageStrings = await Promise.all(messages.map(async (message) => await messageTmpl(message)));
-      say(messageStrings.join('\n\n'));
+      say(await mashTmpl(messages, searchType, searchString, user));
       messages.forEach(message => updateLastQuotedAt(message));
     }
     else {
-      say('いいえ。');
+      say(await noResultsTmpl(searchType, searchString, user));
     }
   });
 
