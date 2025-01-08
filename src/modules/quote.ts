@@ -240,7 +240,7 @@ const quote = async (robot: Robot) => {
           FROM
             ${sql(tableName)}
           WHERE
-            text_searchable @@ websearch_to_tsquery(${text})
+            text_searchable @@ websearch_to_tsquery('english', ${text})
             AND user_id = ${user.id}
             AND is_stored = ${!is_stored}
           ORDER BY
@@ -325,7 +325,7 @@ const quote = async (robot: Robot) => {
             ${sql(tableName)}
           WHERE
             is_stored = true
-            ${searchString ? sql`AND text_searchable @@ websearch_to_tsquery(${searchString})` : sql``}
+            ${searchString ? sql`AND text_searchable @@ websearch_to_tsquery('english', ${searchString})` : sql``}
             ${user ? sql`AND user_id = ${user.id}` : sql``}
           ORDER BY
             random()
