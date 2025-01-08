@@ -36,10 +36,6 @@ function rowToMessage (row: MessageRow) {
   } as Message;
 }
 
-function stringToTsQuery (text: string) {
-  return text.replace(/[^\w\s]*/g, '').trim().split(/\s+/g).join(' & ');
-}
-
 const quote = async (robot: Robot) => {
   robot.helpCommands('quote', [
     ['remember [user] [text]', 'remember most recent message from `user` containing `text`'],
@@ -244,7 +240,7 @@ const quote = async (robot: Robot) => {
           FROM
             ${sql(tableName)}
           WHERE
-            text_searchable @@ to_tsquery(${stringToTsQuery(text)})
+            text_searchable @@ websearch_to_tsquery(${text})
             AND user_id = ${user.id}
             AND is_stored = ${!is_stored}
           ORDER BY
@@ -329,7 +325,7 @@ const quote = async (robot: Robot) => {
             ${sql(tableName)}
           WHERE
             is_stored = true
-            ${searchString ? sql`AND text_searchable @@ to_tsquery(${stringToTsQuery(searchString)})` : sql``}
+            ${searchString ? sql`AND text_searchable @@ websearch_to_tsquery(${searchString})` : sql``}
             ${user ? sql`AND user_id = ${user.id}` : sql``}
           ORDER BY
             random()
