@@ -172,7 +172,7 @@ const quote = async (robot: Robot) => {
     const date = message.created_at || new Date();
     //date created at started being tracked was 2022-10-30
     const formattedDate = `${format(date, 'yyyy-MM-dd') === '2022-10-30' ? 'sometime before ' : ''}${format(date, 'PPP')}`;
-    return `> ${message.text}\n> - ${user.first_name || user.real_name}, ${formattedDate}`;
+    return `> ${message.text?.replace(/\n([^>])/g, "\n> $1")}\n> - ${user.first_name || user.real_name}, ${formattedDate}`;
   };
 
   const cacheMessage = async (message: Message) => {
