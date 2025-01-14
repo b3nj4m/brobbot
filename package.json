@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/app.js",
   "engines": {
-    "node": "22.x"
+    "node": "20.x"
   },
   "scripts": {
     "build": "tsc -p .",
