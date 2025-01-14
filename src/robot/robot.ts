@@ -1,5 +1,4 @@
-import { AllMiddlewareArgs, App, LogLevel, SlackEventMiddlewareArgs } from "@slack/bolt";
-import { StringIndexed } from "@slack/bolt/dist/types/helpers";
+import { AllMiddlewareArgs, App, LogLevel, SlackEventMiddlewareArgs, StringIndexed } from "@slack/bolt";
 import { flatten } from "lodash";
 import pollen from "../modules/pollen";
 import quote from "../modules/quote";
@@ -85,6 +84,7 @@ export default class Robot {
     if (this.users[id]) {
       return this.users[id];
     }
+    //@ts-expect-error
     const user = (await this.app.client.users.profile.get({id})).profile as User;
     this.users[id] = user;
     return user;
@@ -95,7 +95,7 @@ export default class Robot {
   }
 
   public async allUsers () {
-    const users = (await this.app.client.users.list()).members?.map((user) => ({id: user.id, ...user.profile})) as User[];
+    const users = (await this.app.client.users.list({})).members?.map((user) => ({id: user.id, ...user.profile})) as User[];
     users.forEach((user) => {
       if (user.id) {
         this.users[user.id] = user;
