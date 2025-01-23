@@ -69,7 +69,7 @@ function forecastString(fc: any, geo: any) {
 
 const emojiIcons: Record<string, string> = {
   '01d': 'sun_with_face',
-  '01n': 'moon_with_face',
+  '01n': 'full_moon_with_face',
   '02d': 'partly_sunny',
   '02n': 'partly_sunny',
   '03d': 'partly_sunny',
