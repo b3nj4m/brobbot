@@ -14,10 +14,10 @@ async function get(url: string, opts?: any) {
 }
 
 async function geoCode(query: string) {
-  const data = await get(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${encodeURIComponent(MAPBOX_KEY)}&limit=1`) as any;
-  const {context, text} = data.features[0];
-  const zip = context.find((c: any) => /^postcode\b/.test(c.id)).text;
-  return {zip, text};
+  const data = await get(`https://api.mapbox.com/search/geocode/v6/forward?q=${encodeURIComponent(query)}&access_token=${encodeURIComponent(MAPBOX_KEY)}&limit=1`) as any;
+  const {context, properties} = data.features.find((feature: any) => !!feature.context.postcode);
+  const zip = context.postcode.name;
+  return {zip, text: properties.name};
 }
 
 async function forecast(place: any) {
