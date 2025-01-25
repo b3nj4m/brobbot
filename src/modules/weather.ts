@@ -13,12 +13,10 @@ async function get(url: string) {
 }
 
 async function geoCode(query: string) {
-  const data = await get(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${encodeURIComponent(BROBBOT_WEATHER_MAPBOX_KEY)}&limit=1`);
-
-  console.log(`location: ${JSON.stringify(data)}`);
-
-  const {center, text} = data.features[0];
-  return {center: center.reverse(), text};
+  const data = await get(`https://api.mapbox.com/search/geocode/v6/forward?q=${encodeURIComponent(query)}&access_token=${encodeURIComponent(BROBBOT_WEATHER_MAPBOX_KEY)}&limit=1`);
+  const {properties} = data.features[0];
+  const {coordinates, name} = properties;
+  return {center: [coordinates.latitude, coordinates.longitude], text: name};
 }
 
 async function forecast(place: any) {
