@@ -14,7 +14,7 @@ async function get(url: string, opts?: any) {
 }
 
 async function geoCode(query: string) {
-  const data = await get(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${encodeURIComponent(MAPBOX_KEY)}&limit=1&types=poi`) as any;
+  const data = await get(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${encodeURIComponent(MAPBOX_KEY)}&limit=1`) as any;
   const {context, text} = data.features[0];
   const zip = context.find((c: any) => /^postcode\b/.test(c.id)).text;
   return {zip, text};
