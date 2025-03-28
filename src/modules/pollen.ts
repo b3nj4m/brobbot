@@ -36,8 +36,7 @@ async function forecast(place: any) {
 
 function forecastString(data: any) {
   const {periods} = data;
-  const [yesterday, today, tomorrow] = periods;
-  return `Today: ${forecastPeriod(today)},\nTomorrow: ${forecastPeriod(tomorrow)}`;
+  return periods.map((period: any) => `${period.Type}: ${forecastPeriod(period)}`).join('\n');
 }
 
 function forecastPeriod(period: any) {
