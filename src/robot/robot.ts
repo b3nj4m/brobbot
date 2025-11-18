@@ -6,6 +6,7 @@ import roll from "../modules/roll";
 import summon from "../modules/summon";
 import weather from "../modules/weather";
 import RobotStorage from "./robotStorage";
+import time from "../modules/time";
 
 export interface User {
   id: string;
@@ -71,6 +72,7 @@ export default class Robot {
       pollen(this),
       summon(this),
       roll(this),
+      time(this)
     ]);
     this.handleMessages();
     this.handleHelp();
